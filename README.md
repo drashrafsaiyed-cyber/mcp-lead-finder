@@ -71,7 +71,7 @@ Leads scoring **10+** trigger Telegram alerts. Adjust `NOTIFY_MIN_SCORE` in `.en
 ### 1. Clone & install
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/mcp-lead-finder.git
+git clone https://github.com/drashrafsaiyed-cyber/mcp-lead-finder.git
 cd mcp-lead-finder
 pip install -r requirements.txt
 ```
@@ -153,7 +153,7 @@ mcp-lead-finder/
 ├── storage.py          # SQLite operations
 ├── scrapers/
 │   ├── reddit.py       # Reddit public JSON scraper (no auth needed)
-│   ├── upwork.py       # RemoteOK API scraper
+│   ├── upwork.py       # RemoteOK public API scraper (replaces discontinued Upwork RSS)
 │   └── hackernews.py   # HackerNews via Algolia API
 ├── .env.example        # Environment variable template
 ├── requirements.txt
