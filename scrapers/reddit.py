@@ -9,9 +9,18 @@ from datetime import datetime, timezone
 
 from scrapers.scoring import score_text
 
-SUBREDDITS = [
+# Job-first subreddits — people posting these are actively hiring
+JOB_SUBREDDITS = [
     "forhire",
     "freelance_forhire",
+    "slavelabour",        # micro-tasks, small budgets — real leads
+    "jobs4bitcoins",      # crypto-paid freelance work
+    "HireADeveloper",
+]
+
+# Discovery subreddits — mix of discussion + occasional job posts
+# scored normally; noise keywords will suppress non-job posts automatically
+DISCOVERY_SUBREDDITS = [
     "ClaudeAI",
     "LocalLLaMA",
     "LangChain",
@@ -28,7 +37,10 @@ def fetch(limit_per_sub: int = 25) -> tuple[list[dict], str | None]:
     leads = []
     errors = []
 
-    for sub in SUBREDDITS:
+    all_subs = [(sub, True) for sub in JOB_SUBREDDITS] + \
+               [(sub, False) for sub in DISCOVERY_SUBREDDITS]
+
+    for sub, is_job_sub in all_subs:
         url = f"https://www.reddit.com/r/{sub}/new.json?limit={limit_per_sub}"
         try:
             resp = requests.get(url, headers=HEADERS, timeout=10)
@@ -41,6 +53,10 @@ def fetch(limit_per_sub: int = 25) -> tuple[list[dict], str | None]:
                 body = post.get("selftext", "")
                 combined = f"{title} {body}"
                 s = score_text(combined)
+
+                # job subreddits get a base boost — posting there implies hiring intent
+                if is_job_sub:
+                    s += 5
 
                 posted_ts = post.get("created_utc", 0)
                 posted = datetime.fromtimestamp(posted_ts, tz=timezone.utc).isoformat()

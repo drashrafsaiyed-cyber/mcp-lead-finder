@@ -14,15 +14,20 @@ except ImportError:
 from scrapers.scoring import score_text
 
 QUERIES = [
-    "MCP freelance hire build",
-    "Model Context Protocol developer hire",
-    "Claude API integration developer",
+    "MCP developer hire freelance",
+    "Model Context Protocol developer needed",
+    "Claude API integration hire",
+    "AI agent developer freelance budget",
 ]
 
-# These title prefixes are product launches / news — NOT job leads
+# Title prefixes that are product launches or discussions — NOT job leads.
+# NOTE: "who is hiring" is intentionally NOT here — those threads are leads.
 NOISE_PREFIXES = (
-    "show hn:", "ask hn:", "tell hn:", "launch hn:",
-    "show hn :", "poll:", "who is hiring",
+    "show hn:",
+    "show hn :",
+    "tell hn:",
+    "launch hn:",
+    "poll:",
 )
 
 
