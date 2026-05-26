@@ -2,9 +2,9 @@
 
 > An MCP server that finds freelancing leads for MCP builders, Claude integrators, and AI automation developers — and sends Telegram alerts when high-value leads appear.
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 ![Python](https://img.shields.io/badge/Python-3.10+-blue)
 ![FastMCP](https://img.shields.io/badge/FastMCP-3.x-green)
-![License](https://img.shields.io/badge/License-MIT-yellow)
 
 ---
 
@@ -13,9 +13,18 @@
 - Scrapes **Reddit**, **RemoteOK**, and **HackerNews** for MCP/AI integration freelancing opportunities
 - Scores every lead by keyword relevance (MCP, Claude, LLM, automation...)
 - **Sends Telegram alerts** every 3 hours when high-score leads are found
-- Exposes **MCP tools** so you can query leads conversationally inside Claude Desktop
+- Exposes **8 MCP tools** so you can query leads conversationally inside Claude Desktop
 
 **No API keys needed** — Reddit uses public JSON endpoints, HackerNews uses the free Algolia API, RemoteOK has a free public API.
+
+---
+
+## What it won't do
+
+- Won't reply to leads for you — it finds and drafts, you send
+- Won't run without your machine on — it's a local tool, not a hosted service
+- Won't guarantee paid work — lead quality depends on what's posted that day
+- Won't scrape LinkedIn — their ToS prohibits it and getting banned kills your profile
 
 ---
 
@@ -30,7 +39,7 @@ Ask Claude naturally:
 "Draft a reply for lead #5 — I build FastMCP servers in Python"
 ```
 
-Telegram alert example:
+Telegram alert on your phone:
 ```
 🔥 New MCP Lead [Score: 15]
 📌 Source: REDDIT
@@ -63,6 +72,15 @@ Telegram alert example:
 | python | +1 |
 
 Leads scoring **10+** trigger Telegram alerts. Adjust `NOTIFY_MIN_SCORE` in `.env`.
+
+---
+
+## Requirements
+
+- Python 3.10+
+- A Telegram account (free) — for alerts
+- Claude Desktop — to use the MCP tools conversationally
+- Windows / macOS / Linux
 
 ---
 
@@ -111,10 +129,9 @@ Edit `%APPDATA%\Claude\claude_desktop_config.json` (Windows) or `~/Library/Appli
 
 Fully quit Claude Desktop and reopen it.
 
-### 5. Schedule auto-alerts (Windows)
+### 5. Schedule auto-alerts
 
-Run once in Command Prompt — scrapes + notifies every 3 hours:
-
+**Windows** — run once in Command Prompt:
 ```
 schtasks /create /tn "MCP Lead Finder" /tr "python C:\path\to\mcp-lead-finder\notifier.py" /sc hourly /mo 3 /st 08:00 /f
 ```
@@ -162,10 +179,35 @@ mcp-lead-finder/
 
 ---
 
-## License
+## Contributing
 
-MIT — free to use, modify, and distribute.
+Contributions welcome. Particularly useful additions:
+
+- Additional job sources (Contra, Toptal RSS, HN monthly hiring threads)
+- Better relevance scoring for non-English posts
+- LinkedIn integration if/when their API opens up
+- Web UI dashboard for leads (Flask/Streamlit)
+
+Open an issue first for significant changes.
 
 ---
 
-Built with [FastMCP](https://github.com/jlowin/fastmcp) • Inspired by the need to find real MCP freelancing work 🚀
+## Related
+
+- [Model Context Protocol spec](https://modelcontextprotocol.io)
+- [FastMCP Python SDK](https://github.com/jlowin/fastmcp)
+- [MCP Inspector](https://github.com/modelcontextprotocol/inspector)
+- [Claude Desktop](https://claude.ai/download)
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE).
+
+---
+
+## Author
+
+Built by **Dr. Ashraf Saiyed** ([VR AI Automations](https://github.com/drashrafsaiyed-cyber)).
+Not affiliated with or endorsed by Anthropic.
