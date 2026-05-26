@@ -27,7 +27,10 @@ import scrapers.remoteok as remoteok
 
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
-MIN_SCORE = int(os.getenv("NOTIFY_MIN_SCORE", "5"))
+try:
+    MIN_SCORE = int((os.getenv("NOTIFY_MIN_SCORE", "5") or "5").strip())
+except ValueError:
+    MIN_SCORE = 5  # fallback if secret contains spaces, quotes, or other garbage
 
 
 def ensure_notified_column():
