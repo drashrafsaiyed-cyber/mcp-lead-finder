@@ -55,9 +55,9 @@ Telegram alert on your phone:
 
 | Source | What it finds |
 |--------|--------------|
-| **Reddit** | r/forhire, r/freelance_forhire, r/ClaudeAI, r/LocalLLaMA, r/LangChain, r/entrepreneur, r/SaaS, r/MachineLearning |
-| **RemoteOK** | Remote jobs tagged: ai, api, python, automation |
-| **HackerNews** | Hiring posts mentioning MCP / Claude / Model Context Protocol |
+| **Reddit** | r/forhire, r/freelance_forhire, r/ClaudeAI, r/LocalLLaMA, r/LangChain, r/entrepreneur, r/SaaS, r/MachineLearning — no API key needed |
+| **RemoteOK** | Remote jobs tagged: ai, api, python, automation — free public API |
+| **HackerNews** | Hiring posts mentioning MCP / Claude / Model Context Protocol — via Algolia API |
 
 ---
 
@@ -71,7 +71,7 @@ Telegram alert on your phone:
 | automation / API integration / n8n / zapier | +2 |
 | python | +1 |
 
-Leads scoring **10+** trigger Telegram alerts. Adjust `NOTIFY_MIN_SCORE` in `.env`.
+Leads scoring **5+** trigger Telegram alerts by default. Adjust `NOTIFY_MIN_SCORE` in `.env`.
 
 ---
 
@@ -94,23 +94,19 @@ cd mcp-lead-finder
 pip install -r requirements.txt
 ```
 
-### 2. Configure environment
-
-```bash
-cp .env.example .env
-```
-
-### 3. Set up Telegram bot (for alerts)
+### 2. Set up Telegram bot (for alerts)
 
 1. Open Telegram → search **@BotFather** → send `/newbot`
 2. Follow the steps to create your bot and get your **token**
-3. Run the setup helper — it fetches your Chat ID and saves everything automatically:
+3. Run the setup helper — it creates `.env` automatically, fetches your Chat ID, and sends a test message:
 
 ```bash
 python setup_telegram.py
 ```
 
 Check your Telegram — a test message will arrive confirming it works.
+
+> **Note:** `setup_telegram.py` creates `.env` from `.env.example` automatically if it doesn't exist yet. No manual `cp` needed.
 
 ### 4. Connect to Claude Desktop
 
@@ -151,7 +147,7 @@ crontab -e
 |------|-------------|
 | `refresh_leads()` | Scrape all sources now, save new leads to DB |
 | `get_fresh_leads(hours_back=24)` | Show leads from last N hours, sorted by score |
-| `search_leads(query, source, limit)` | Search stored leads by keyword |
+| `search_leads(query, source, limit)` | Search stored leads by keyword — source: all/reddit/remoteok/hackernews |
 | `get_lead_details(lead_id)` | Full details + description for a specific lead |
 | `save_lead(lead_id, notes)` | Bookmark a lead with optional notes |
 | `list_saved_leads()` | View all bookmarked leads |
@@ -170,7 +166,8 @@ mcp-lead-finder/
 ├── storage.py          # SQLite operations
 ├── scrapers/
 │   ├── reddit.py       # Reddit public JSON scraper (no auth needed)
-│   ├── upwork.py       # RemoteOK public API scraper (replaces discontinued Upwork RSS)
+│   ├── remoteok.py     # RemoteOK public API scraper
+│   ├── scoring.py      # Shared keyword scoring (single source of truth)
 │   └── hackernews.py   # HackerNews via Algolia API
 ├── .env.example        # Environment variable template
 ├── requirements.txt

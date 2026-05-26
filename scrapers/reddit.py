@@ -7,6 +7,8 @@ import time
 import requests
 from datetime import datetime, timezone
 
+from scrapers.scoring import score_text
+
 SUBREDDITS = [
     "forhire",
     "freelance_forhire",
@@ -18,25 +20,7 @@ SUBREDDITS = [
     "MachineLearning",
 ]
 
-KEYWORDS = {
-    "mcp": 10,
-    "model context protocol": 10,
-    "claude": 5,
-    "ai agent": 3,
-    "llm": 3,
-    "automation": 2,
-    "api integration": 2,
-    "n8n": 2,
-    "zapier": 2,
-    "python": 1,
-}
-
 HEADERS = {"User-Agent": "mcp-lead-finder/1.0 (personal use)"}
-
-
-def score(text: str) -> int:
-    low = text.lower()
-    return sum(pts for kw, pts in KEYWORDS.items() if kw in low)
 
 
 def fetch(limit_per_sub: int = 25) -> tuple[list[dict], str | None]:
@@ -56,7 +40,7 @@ def fetch(limit_per_sub: int = 25) -> tuple[list[dict], str | None]:
                 title = post.get("title", "")
                 body = post.get("selftext", "")
                 combined = f"{title} {body}"
-                s = score(combined)
+                s = score_text(combined)
 
                 posted_ts = post.get("created_utc", 0)
                 posted = datetime.fromtimestamp(posted_ts, tz=timezone.utc).isoformat()

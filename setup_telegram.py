@@ -33,8 +33,15 @@ try:
     first_name = updates[-1]["message"]["chat"].get("first_name", "")
     print(f"\n✅ Found your Chat ID: {chat_id} (Hi {first_name}!)")
 
-    # write to .env
+    # write to .env — create from .env.example if it doesn't exist yet
     env_path = Path(__file__).parent / ".env"
+    if not env_path.exists():
+        example = env_path.with_name(".env.example")
+        if example.exists():
+            env_path.write_text(example.read_text())
+            print("📋 Created .env from .env.example")
+        else:
+            env_path.write_text("")
     content = env_path.read_text()
     content = content.replace("your_bot_token_here", token)
     content = content.replace("your_chat_id_here", chat_id)

@@ -1,3 +1,9 @@
+"""
+MCP Lead Finder — FastMCP server.
+Exposes tools for finding, searching, and tracking freelancing leads
+for MCP builders and AI integration developers.
+Sources: Reddit (public JSON), RemoteOK API, HackerNews (Algolia).
+"""
 import sys
 from pathlib import Path
 
@@ -8,7 +14,7 @@ load_dotenv(Path(__file__).parent / ".env")
 
 import storage
 import scrapers.reddit as reddit_scraper
-import scrapers.upwork as upwork_scraper
+import scrapers.remoteok as remoteok_scraper
 import scrapers.hackernews as hn_scraper
 
 storage.init_db()
@@ -49,8 +55,8 @@ def get_fresh_leads(hours_back: int = 24) -> str:
 def search_leads(query: str, source: str = "all", limit: int = 20) -> str:
     """
     Search stored leads by keyword in title or description.
-    source can be: 'all', 'reddit', 'upwork', 'hackernews'
-    Example: search_leads('MCP python') or search_leads('Claude', source='upwork')
+    source can be: 'all', 'reddit', 'remoteok', 'hackernews'
+    Example: search_leads('MCP python') or search_leads('Claude', source='remoteok')
     """
     leads = storage.search_leads(query, source, limit)
     if not leads:
@@ -145,7 +151,7 @@ def get_subreddit_posts(subreddit: str, limit: int = 25, keyword: str = "") -> s
 @mcp.tool()
 def refresh_leads() -> str:
     """
-    Scrape all sources right now (Reddit + Upwork + HackerNews) and save new leads to DB.
+    Scrape all sources right now (Reddit + RemoteOK + HackerNews) and save new leads to DB.
     Returns count of new leads found. Run this to get the freshest data.
     """
     count, notes = _do_scrape()
@@ -166,10 +172,10 @@ def _do_scrape() -> tuple[int, list[str]]:
         if storage.upsert_lead(lead):
             total_new += 1
 
-    upwork_leads, upwork_err = upwork_scraper.fetch()
-    if upwork_err:
-        notes.append(f"Upwork: {upwork_err}")
-    for lead in upwork_leads:
+    remoteok_leads, remoteok_err = remoteok_scraper.fetch()
+    if remoteok_err:
+        notes.append(f"RemoteOK: {remoteok_err}")
+    for lead in remoteok_leads:
         if storage.upsert_lead(lead):
             total_new += 1
 

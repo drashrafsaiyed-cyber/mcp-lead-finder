@@ -1,31 +1,20 @@
 """
-Jobs source: RemoteOK public API (replaces Upwork RSS which was discontinued).
-Fetches AI/API/Python-tagged remote jobs and filters by relevance keywords.
+RemoteOK public API scraper.
+Fetches AI/API/Python-tagged remote jobs and scores by relevance keywords.
+Source: https://remoteok.com/api
 """
 import re
 import sys
+import requests
 from datetime import datetime, timezone
 
-try:
-    import requests
-except ImportError:
-    requests = None
+from scrapers.scoring import score_text
 
 REMOTEOK_TAGS = ["ai", "api", "python", "automation"]
-BUDGET_RE = re.compile(r"\$[\d,]+(?:\s*[-–]\s*\$[\d,]+)?(?:\s*/\s*(?:hr|hour|month|year))?", re.IGNORECASE)
-
-KEYWORDS = {
-    "mcp": 10, "model context protocol": 10,
-    "claude": 5,
-    "ai agent": 3, "llm": 3, "langchain": 3,
-    "automation": 2, "api integration": 2, "n8n": 2, "zapier": 2,
-    "python": 1,
-}
-
-
-def score(text: str) -> int:
-    low = text.lower()
-    return sum(pts for kw, pts in KEYWORDS.items() if kw in low)
+BUDGET_RE = re.compile(
+    r"\$[\d,]+(?:\s*[-–]\s*\$[\d,]+)?(?:\s*/\s*(?:hr|hour|month|year))?",
+    re.IGNORECASE,
+)
 
 
 def extract_budget(text: str) -> str:
@@ -34,12 +23,9 @@ def extract_budget(text: str) -> str:
 
 
 def fetch() -> tuple[list[dict], str | None]:
-    if requests is None:
-        return [], "requests not installed — run: pip install requests"
-
     now = datetime.now(timezone.utc).isoformat()
     leads = []
-    seen_ids = set()
+    seen_ids: set[str] = set()
     errors = []
 
     for tag in REMOTEOK_TAGS:
@@ -67,20 +53,17 @@ def fetch() -> tuple[list[dict], str | None]:
                 tags_list = job.get("tags", [])
 
                 combined = f"{title} {desc} {' '.join(tags_list)}"
-                s = score(combined)
-
                 budget = salary or extract_budget(desc)
-                date_str = job.get("date", now)
 
                 leads.append({
-                    "source": "upwork",  # labelled 'upwork' to keep source label consistent for users
+                    "source": "remoteok",
                     "title": f"{title} @ {company}" if company else title,
                     "description": desc[:2000],
                     "url": job_url,
                     "poster": company or "Remote Company",
-                    "posted_at": date_str,
+                    "posted_at": job.get("date", now),
                     "budget": budget,
-                    "relevance_score": s,
+                    "relevance_score": score_text(combined),
                     "fetched_at": now,
                 })
 

@@ -1,3 +1,7 @@
+"""
+HackerNews scraper using the free Algolia HN Search API.
+No API key needed. Filters out Show HN / Ask HN noise posts.
+"""
 import sys
 import urllib.parse
 from datetime import datetime, timezone
@@ -6,6 +10,8 @@ try:
     import requests
 except ImportError:
     requests = None
+
+from scrapers.scoring import score_text
 
 QUERIES = [
     "MCP freelance hire build",
@@ -18,20 +24,6 @@ NOISE_PREFIXES = (
     "show hn:", "ask hn:", "tell hn:", "launch hn:",
     "show hn :", "poll:", "who is hiring",
 )
-
-
-def score(text: str) -> int:
-    low = text.lower()
-    pts = 0
-    if "mcp" in low or "model context protocol" in low:
-        pts += 10
-    if "claude" in low:
-        pts += 5
-    if "ai agent" in low or "llm" in low:
-        pts += 3
-    if "automation" in low or "api integration" in low:
-        pts += 2
-    return pts
 
 
 def fetch() -> tuple[list[dict], str | None]:
@@ -67,7 +59,7 @@ def fetch() -> tuple[list[dict], str | None]:
                 poster = hit.get("author", "unknown")
                 ts = hit.get("created_at", now)
                 combined = f"{title} {desc}"
-                s = score(combined)
+                s = score_text(combined)
 
                 leads.append({
                     "source": "hackernews",

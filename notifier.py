@@ -3,9 +3,11 @@ Telegram Lead Notifier
 Run this on a schedule (every 3 hours via Windows Task Scheduler).
 Sends Telegram alerts for high-relevance leads not yet notified.
 """
+import html
 import os
 import sys
 import sqlite3
+import time
 import requests
 from pathlib import Path
 from datetime import datetime, timezone
@@ -20,7 +22,8 @@ load_dotenv(Path(__file__).parent / ".env")
 # ensure project root on path
 sys.path.insert(0, str(Path(__file__).parent))
 import storage
-from scrapers import reddit, upwork, hackernews
+from scrapers import reddit, hackernews
+import scrapers.remoteok as remoteok
 
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
@@ -76,12 +79,13 @@ def format_message(lead: dict) -> str:
     score = lead.get("relevance_score", 0)
     emoji = "🔥" if score >= 10 else "⭐"
     source = lead.get("source", "").upper()
-    title = lead.get("title", "")[:100]
-    poster = lead.get("poster", "")
+    # HTML-escape all user-generated fields — Reddit titles can contain <, >, &
+    title = html.escape(lead.get("title", "")[:100])
+    poster = html.escape(lead.get("poster", ""))
     posted = lead.get("posted_at", "")[:16]
-    budget = lead.get("budget", "") or "not listed"
+    budget = html.escape(lead.get("budget", "") or "not listed")
     url = lead.get("url", "")
-    desc = lead.get("description", "").strip()[:200]
+    desc = html.escape(lead.get("description", "").strip()[:200])
 
     msg = (
         f"{emoji} <b>New MCP Lead</b> [Score: {score}]\n"
@@ -108,7 +112,7 @@ def run():
 
     # scrape fresh data
     total_new = 0
-    for scraper, name in [(reddit, "Reddit"), (upwork, "RemoteOK"), (hackernews, "HackerNews")]:
+    for scraper, name in [(reddit, "Reddit"), (remoteok, "RemoteOK"), (hackernews, "HackerNews")]:
         leads, err = scraper.fetch()
         if err and not leads:
             print(f"  ⚠ {name}: {err}")
@@ -128,16 +132,20 @@ def run():
         return
 
     sent = 0
+    failed = 0
     for lead in leads_to_notify:
         msg = format_message(lead)
         if send_telegram(msg):
             mark_notified(lead["id"])
             sent += 1
             print(f"  📤 Sent: {lead['title'][:60]}")
+            time.sleep(0.05)  # stay under Telegram's 30 msg/sec limit
         else:
-            break  # stop on error
+            failed += 1
+            # log and continue — lead stays unnotified and retries next run
+            print(f"  ⚠ Failed (will retry next run): {lead['title'][:60]}")
 
-    print(f"\n✅ Done. {sent} notifications sent.")
+    print(f"\n✅ Done. {sent} sent, {failed} failed (will retry).")
 
 
 if __name__ == "__main__":
