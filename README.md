@@ -22,32 +22,44 @@
 ## What it won't do
 
 - Won't reply to leads for you — it finds and drafts, you send
-- Won't run without your machine on — it's a local tool, not a hosted service
 - Won't guarantee paid work — lead quality depends on what's posted that day
 - Won't scrape LinkedIn — their ToS prohibits it and getting banned kills your profile
+- **The Telegram bot does NOT respond to your messages** — it only sends notifications to you. It is a one-way alert system, not a chatbot. All conversational queries go through Claude Desktop (see below).
 
 ---
 
-## Demo
+## How it works
 
-Ask Claude naturally:
-```
-"Show me fresh MCP leads from the last 24 hours"
-"Search for Claude integration jobs on Reddit"
-"Get full details for lead #12"
-"Save lead #7 with note: replied via DM"
-"Draft a reply for lead #5 — I build FastMCP servers in Python"
-```
+There are **two separate interfaces** — do not confuse them:
 
-Telegram alert on your phone:
+### 1. Telegram bot — one-way alerts only
+The bot sends you a push notification when a high-score lead is found. **You cannot chat with it.** If you send it a message, nothing happens.
+
 ```
-🔥 New MCP Lead [Score: 15]
+🔥 New MCP Lead [Score: 22]
 📌 Source: REDDIT
 📝 Need MCP server built for Slack + Notion integration
 👤 By: u/startup_founder | 2 hrs ago
 💰 Budget: $500-1000
 🔗 https://reddit.com/r/forhire/...
 ```
+
+### 2. Claude Desktop — conversational queries
+Open Claude Desktop and ask in plain English. Claude calls the MCP tools automatically — you never type tool names.
+
+```
+"Any new leads today?"
+"Search for Claude integration jobs on Reddit"
+"Get full details for lead #12"
+"Save lead #7 with note: replied via DM"
+"Draft a reply for lead #5 — I build FastMCP servers in Python"
+```
+
+### Typical daily workflow
+1. Telegram pings you → new lead found
+2. Open Claude Desktop → `"Show me today's leads"`
+3. Interesting one? → `"Draft a reply for lead #8"`
+4. Copy Claude's reply → paste → send on Reddit/Upwork
 
 ---
 
