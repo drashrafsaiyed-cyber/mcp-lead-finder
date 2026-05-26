@@ -1,0 +1,93 @@
+# Runs notifier.py every 3 hours on GitHub Actions infrastructure.
+# No laptop required. leads.db is persisted across runs via cache.
+#
+# Required GitHub secrets (Settings → Secrets and variables → Actions):
+#   TELEGRAM_BOT_TOKEN   — from @BotFather
+#   TELEGRAM_CHAT_ID     — your personal chat ID
+#   NOTIFY_MIN_SCORE     — optional; defaults to 5 if not set
+
+name: Lead Finder — Auto Notify
+
+on:
+  schedule:
+    - cron: '0 */3 * * *'  # every 3 hours, on the hour
+  workflow_dispatch:         # manual trigger from the Actions tab
+
+# prevent two runs from writing to leads.db simultaneously
+concurrency:
+  group: notifier
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # ── 1. source code ─────────────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── 2. restore leads.db from the previous run ──────────────────────────
+      # key includes run_id so every run saves a fresh entry;
+      # restore-keys prefix-matches the most recent saved DB.
+      # on first-ever run: no cache found → notifier.py creates a new leads.db.
+      - name: Restore leads DB
+        uses: actions/cache/restore@v4
+        with:
+          path: leads.db
+          key: leads-db-${{ github.run_id }}
+          restore-keys: leads-db-
+
+      # ── 3. python environment ──────────────────────────────────────────────
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # ── 4. write .env from secrets ─────────────────────────────────────────
+      # secrets are passed via env vars, not interpolated directly in the run
+      # script, so they stay masked in logs.
+      # NOTIFY_MIN_SCORE is only written if the secret is set — writing an
+      # empty value would cause int("") to crash in notifier.py.
+      - name: Write .env from secrets
+        env:
+          BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          MIN_SCORE: ${{ secrets.NOTIFY_MIN_SCORE }}
+        run: |
+          printf 'TELEGRAM_BOT_TOKEN=%s\n' "$BOT_TOKEN" >  .env
+          printf 'TELEGRAM_CHAT_ID=%s\n'   "$CHAT_ID"   >> .env
+          if [ -n "$MIN_SCORE" ]; then
+            printf 'NOTIFY_MIN_SCORE=%s\n' "$MIN_SCORE" >> .env
+          fi
+
+      # ── 5. run ─────────────────────────────────────────────────────────────
+      - name: Run notifier
+        run: python notifier.py
+
+      # ── 6. persist leads.db for the next run ───────────────────────────────
+      # runs even if step 5 failed so partial scrape results are not lost.
+      - name: Save leads DB
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: leads.db
+          key: leads-db-${{ github.run_id }}
+
+      # ── 7. alert on failure ────────────────────────────────────────────────
+      # sends a Telegram message if any earlier step fails so a silent crash
+      # does not look like a clean run.
+      - name: Alert on failure
+        if: failure()
+        env:
+          BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${CHAT_ID}" \
+            --data-urlencode "text=❌ MCP Lead Finder GitHub Action FAILED — check the run log: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            -d "parse_mode=HTML"
