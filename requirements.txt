@@ -1,0 +1,4 @@
+fastmcp>=3.0
+praw
+requests
+python-dotenv
